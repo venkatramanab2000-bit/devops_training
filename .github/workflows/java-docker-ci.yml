@@ -1,0 +1,60 @@
+name: Java Docker CI Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout code
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. Set up Java
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+
+    # 3. Compile Java
+    - name: Compile Java App
+      run: javac App.java
+
+    # 4. Run Sonar Scan (Optional)
+    - name: SonarQube Scan
+      if: ${{ secrets.SONAR_TOKEN != '' }}
+      run: |
+        echo "Running Sonar Scan..."
+        # Example placeholder
+        # mvn sonar:sonar -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+    # 5. Archive artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: java-app
+        path: App.class
+
+    # 6. Generate dynamic tag
+    - name: Generate Image Tag
+      id: tag
+      run: echo "TAG=$(date +%s)" >> $GITHUB_OUTPUT
+
+    # 7. Login to Docker Hub
+    - name: Docker Login
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+    # 8. Build Docker Image
+    - name: Build Docker Image
+      run: |
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/java-web-app:${{ steps.tag.outputs.TAG }} .
+
+    # 9. Push Docker Image
+    - name: Push Docker Image
+      run: |
+        docker push ${{ secrets.DOCKER_USERNAME }}/java-web-app:${{ steps.tag.outputs.TAG }}

@@ -20,11 +20,20 @@ public class App {
     static class MyHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+
             String response = "<h1>Hello from Java Docker App 🚀</h1>";
-            exchange.sendResponseHeaders(200, response.length());
+
+            // Convert to bytes
+            byte[] responseBytes = response.getBytes();
+
+            // Add header
+            exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+
+            // Send response
+            exchange.sendResponseHeaders(200, responseBytes.length);
 
             OutputStream os = exchange.getResponseBody();
-            os.write(response.getBytes());
+            os.write(responseBytes);
             os.close();
         }
     }
